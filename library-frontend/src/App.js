@@ -5,7 +5,7 @@ import NewBook from './components/NewBook'
 import LoginForm from './components/LoginForm'
 import Recommendations from './components/Recommendations'
 import { gql } from 'apollo-boost'
-import { useQuery, useMutation, useApolloClient } from '@apollo/react-hooks'
+import { useQuery, useMutation, useApolloClient, useSubscription } from '@apollo/react-hooks'
 
 const ALL_AUTHORS = gql`
   {
@@ -26,25 +26,32 @@ const ME = gql`
 `
 
 const LOGIN = gql`
-mutation login($username: String!, $password: String!) {
-  login(username: $username, password: $password)  {
-    value
+  mutation login($username: String!, $password: String!) {
+    login(username: $username, password: $password)  {
+      value
+    }
   }
-}
-`
-
-const ALL_BOOKS = gql`
-query getBooks($author: String, $genre: String) {
-  allBooks(author: $author, genre: $genre) {
+  `
+const BOOK_DETAILS = gql`
+  fragment BookDetails on Book {
+    id
     title
-    published
+    published 
     author {
       name
       born
     }
     genres
   }
+`
+
+const ALL_BOOKS = gql`
+query getBooks($author: String, $genre: String) {
+  allBooks(author: $author, genre: $genre) {
+    ...BookDetails
+  }
 }
+${BOOK_DETAILS}
 `
 
 const CREATE_BOOK = gql`
@@ -56,16 +63,10 @@ mutation createBook($title: String!, $published: Int!, $author: String!, $genres
       genres: $genres
   )
   {
-    title
-    published
-    author {
-      name
-      born
-    }
-    genres
-    id
+    ...BookDetails
   }
 }
+${BOOK_DETAILS}
 `
 
 const MODIFY_AUTHOR = gql`
@@ -80,6 +81,16 @@ mutation modifyAuthor($name: String!, $setBornTo: Int!) {
   }
 }
 `
+
+const BOOK_ADDED = gql`
+  subscription {
+    bookAdded {
+      ...BookDetails
+    }
+  }
+  ${BOOK_DETAILS}
+`
+
 const App = () => {
   const [page, setPage] = useState('authors')
   const [errorMessage, setErrorMessage] = useState(null)
@@ -90,6 +101,13 @@ const App = () => {
 
     if (token) setToken(token)
   }, [])
+
+  useSubscription(BOOK_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      const book = subscriptionData.data.bookAdded
+      window.alert(`A new book had been added with title ${book.title} by ${book.author.name}`)
+    }
+  })
 
   const client = useApolloClient()
 
