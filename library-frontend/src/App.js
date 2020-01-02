@@ -95,12 +95,36 @@ const App = () => {
   const [page, setPage] = useState('authors')
   const [errorMessage, setErrorMessage] = useState(null)
   const [token, setToken] = useState(null)
+  const [genre, setGenre] = useState(null)
+  const [favoriteGenre, setFavoriteGenre] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem('library-user-token')
 
     if (token) setToken(token)
   }, [])
+
+  const me = useQuery(ME, {
+    fetchPolicy: 'no-cache'
+  })
+
+  useEffect(() => {
+    const result = me
+
+    console.log(result)
+    if (result.loading) {
+      return undefined
+    } else if (result.error) {
+      handleError(result.error)
+    } else if (result.data.me) {
+      console.log('There it is: ')
+      console.log(result.data.me.favoriteGenre)
+      setFavoriteGenre(result.data.me.favoriteGenre)
+      console.log(favoriteGenre)
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, token])
 
   const updateCacheWith = (addedBook) => {
     const includedIn = (set, object) =>
@@ -136,19 +160,20 @@ const App = () => {
 
   const authors = useQuery(ALL_AUTHORS)
 
-  const me = useQuery(ME)
-
-  // const books = useQuery(ALL_BOOKS)
+  const books = useQuery(ALL_BOOKS, {
+    variables: { genre }
+  })
 
   const [login] = useMutation(LOGIN, {
     onError: handleError,
-    refetchQueries: [{ query: ME }]
+    refetchQueries: [{ query: ME, fetchPolicy: 'no-cache' }]
   })
 
   const logout = () => {
     setToken(null)
     localStorage.clear()
     client.resetStore()
+    setFavoriteGenre(null)
     setPage('authors')
   }
 
@@ -164,14 +189,25 @@ const App = () => {
     refetchQueries: [{ query: ALL_AUTHORS }]
   })
 
+  const setRecommendationsPage = () => {
+    console.log(favoriteGenre)
+    setGenre(favoriteGenre)
+    setPage('recommendations')
+  }
+
+  const setBookPage = () => {
+    setGenre(null)
+    setPage('books')
+  }
+
   return (
     <div>
       <div>
         <button onClick={() => setPage('authors')}>authors</button>
-        <button onClick={() => setPage('books')}>books</button>
+        <button onClick={setBookPage}>books</button>
         {token && <button onClick={() => setPage('add')}>add book</button>}
         {!token && <button onClick={() => setPage('login')}>login</button>}
-        {token && <button onClick={() => setPage('recommendations')}>recommendations</button>}
+        {token && <button onClick={setRecommendationsPage}>recommendations</button>}
         {token && <button onClick={logout}>logout</button>}
 
       </div>
@@ -181,14 +217,12 @@ const App = () => {
         </div>
       }
 
-      {token && <div>{token}</div>}
-
       <Authors
         show={page === 'authors'} result={authors} editAuthor={editAuthor}
       />
 
       <Books
-        show={page === 'books'} ALL_BOOKS={ALL_BOOKS} handleError={handleError}
+        show={page === 'books'} result={books} handleError={handleError} setGenre={(genre) => setGenre(genre)} genre={genre}
       />
 
       <NewBook
@@ -200,7 +234,7 @@ const App = () => {
       />
 
       <Recommendations
-        show={page === 'recommendations'} ALL_BOOKS={ALL_BOOKS} handleError={handleError} me={me}
+        show={page === 'recommendations'} result={books} handleError={handleError} me={me} setGenre={(genre) => setGenre(genre)} genre={genre}
       />
 
     </div>

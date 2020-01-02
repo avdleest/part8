@@ -2,20 +2,13 @@ import React, { useState } from 'react'
 import { useQuery } from '@apollo/react-hooks'
 
 const Books = (props) => {
-  const [genre, setGenre] = useState(null)
-
-
   const genres = ['bergen', 'dalen', 'dingen', 'vliegen', 'vliegtuig']
 
-  const { loading, error, data } = useQuery(props.ALL_BOOKS, {
-    variables: { genre },
-  })
+  const { loading, error, data } = props.result
 
   if (!props.show) {
     return null
   }
-
-  const books = data.allBooks
 
   if (loading) {
     return <div>loading...</div>
@@ -25,11 +18,13 @@ const Books = (props) => {
     props.handleError(error)
   }
 
+  const books = data.allBooks
+
   return (
     <div>
       <h2>books</h2>
-      {genre && `In genre ${genre}`}
-      {!genre && 'In all genres'}
+      {props.genre && `In genre ${props.genre}`}
+      {!props.genre && 'In all genres'}
       <table>
         <tbody>
           <tr>
@@ -51,9 +46,9 @@ const Books = (props) => {
         </tbody>
       </table>
       {genres.map(genre =>
-        <button key={genre} value={genre} onClick={() => setGenre(genre)}>{genre}</button>
+        <button key={genre} value={genre} onClick={() => props.setGenre(genre)}>{genre}</button>
       )}
-      <button onClick={() => setGenre(null)}>all genres</button>
+      <button onClick={() => props.setGenre(null)}>all genres</button>
 
     </div>
   )

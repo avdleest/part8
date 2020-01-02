@@ -2,28 +2,28 @@ import React, { useState, useEffect } from 'react'
 import { useQuery } from '@apollo/react-hooks'
 
 const Recommendations = (props) => {
-  const [genre, setGenre] = useState(null)
+  // useEffect(() => {
 
-  useEffect(() => {
+  //   const settingGenre = () => {
+  //     const { loading, error, data } = props.me
 
-    const settingGenre = () => {
-      const { loading, error, data } = props.me
+  //     if (loading) {
+  //       console.log('loading...')
+  //     } else if (error) {
+  //       props.handleError(error)
+  //     } else if (data.me && props.show) {
+  //       props.setGenre(data.me.favoriteGenre)
+  //     }
+  //   }
+  //   settingGenre()
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [props.me])
 
-      if (loading) {
-        console.log('loading...')
-      } else if (error) {
-        props.handleError(error)
-      } else if (data.me) {
-        setGenre(data.me.favoriteGenre)
-      }
-    }
-    settingGenre()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.me])
+  if (!props.show) {
+    return null
+  }
 
-  const { loading, error, data: booksdata } = useQuery(props.ALL_BOOKS, {
-    variables: { genre },
-  })
+  const { loading, error, data } = props.result
 
   if (!props.show) {
     return null
@@ -37,12 +37,12 @@ const Recommendations = (props) => {
     props.handleError(error)
   }
 
-  const books = booksdata.allBooks
+  const books = data.allBooks
 
   return (
     <div>
       <h2>Recommendations</h2>
-      <p>{`Books in your favourite genre ${genre}`}</p>
+      <p>{`Books in your favourite genre ${props.genre}`}</p>
       <table>
         <tbody>
           <tr>
