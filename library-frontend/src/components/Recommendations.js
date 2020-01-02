@@ -1,21 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery } from '@apollo/react-hooks'
 
-const Books = (props) => {
+const Recommendations = (props) => {
   const [genre, setGenre] = useState(null)
 
+  useEffect(() => {
 
-  const genres = ['bergen', 'dalen', 'dingen', 'vliegen', 'vliegtuig']
+    const settingGenre = () => {
+      const { loading, error, data } = props.me
 
-  const { loading, error, data } = useQuery(props.ALL_BOOKS, {
+      if (loading) {
+        console.log('loading...')
+      } else if (error) {
+        props.handleError(error)
+      } else if (data.me) {
+        setGenre(data.me.favoriteGenre)
+      }
+    }
+    settingGenre()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.me])
+
+  const { loading, error, data: booksdata } = useQuery(props.ALL_BOOKS, {
     variables: { genre },
   })
 
   if (!props.show) {
     return null
   }
-
-  const books = data.allBooks
 
   if (loading) {
     return <div>loading...</div>
@@ -25,11 +37,12 @@ const Books = (props) => {
     props.handleError(error)
   }
 
+  const books = booksdata.allBooks
+
   return (
     <div>
-      <h2>books</h2>
-      {genre && `In genre ${genre}`}
-      {!genre && 'In all genres'}
+      <h2>Recommendations</h2>
+      <p>{`Books in your favourite genre ${genre}`}</p>
       <table>
         <tbody>
           <tr>
@@ -50,13 +63,9 @@ const Books = (props) => {
           )}
         </tbody>
       </table>
-      {genres.map(genre =>
-        <button key={genre} value={genre} onClick={() => setGenre(genre)}>{genre}</button>
-      )}
-      <button onClick={() => setGenre(null)}>all genres</button>
 
     </div>
   )
 }
 
-export default Books
+export default Recommendations
